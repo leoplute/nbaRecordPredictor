@@ -4,11 +4,11 @@ import math
 import itertools
 
 BASE_URL = "https://api.server.nbaapi.com/api/playertotals"
+ADVANCED_URL = "https://api.server.nbaapi.com/api/playeradvancedstats"
 
 class FantasyModel:
 
     def predict_record(self, team_fingerprint):
-
         total_score = 0
         for player_name,fingerprint in team_fingerprint.items():
             for ability, score in fingerprint.items():
@@ -234,7 +234,9 @@ class FantasyModel:
 
         potential_player_ids = self.get_potential_player_ids(player_name)
 
+        # These store all potential matches
         potential_player_stats = {}
+        potential_player_advanced_stats = {}
 
         for playerId in potential_player_ids:
 
@@ -245,8 +247,8 @@ class FantasyModel:
                 "playerId": playerId,
             }
             
+            # Get the season totals
             response = requests.get(BASE_URL, params=params, headers=headers)
-
             if response.status_code == 200:
                 data = response.json()
                 players_list = data.get("data", [])
@@ -255,24 +257,43 @@ class FantasyModel:
             else:
                 print(f'No player matches the playerId of: {playerId}')
 
+            # Get the advanced stats
+            advancedResponse = requests.get(ADVANCED_URL, params=params, headers=headers)
+            if advancedResponse.status_code == 200:
+                data = advancedResponse.json()
+                advanced_player_list = data.get("data", [])
+                for player in advanced_player_list:
+                    potential_player_advanced_stats[player['playerName']] = player
+            else:
+                print(f"No advanced stats found for playerId: {playerId}")
+
+
         # If there are no matches
         if not potential_player_stats:
+            print(f"No stats found for any potential ID for the player {player_name}")
             return {}
         
         # If there is exactly one match (the correct player)
         if len(potential_player_stats) == 1:
-            playerStats = list(potential_player_stats.values())[0]
+            player_name_key = list(potential_player_stats.keys())[0]
+            playerStats = potential_player_stats[player_name_key]
         
         # If there is more than one match, find the correct player by name
         else:
             playerStats = None
+            player_name_key = None
             for pname, player in potential_player_stats.items():
                 if pname.lower() == player_name.lower():
                     playerStats = player
+                    player_name_key = pname
                     break
             if not playerStats:
                 print('issue finding player based on the id')
                 return {}
+            
+        advanced_stats = potential_player_advanced_stats.get(player_name_key, {})
+        if not advanced_stats:
+            print(f"Warning: No advanced stats found for {player_name_key}")
 
         relevant_stats = {
                     "position": playerStats['position'],
@@ -282,15 +303,40 @@ class FantasyModel:
                     "ft%": playerStats['ftPercent'],
                     "efg%": playerStats['effectFgPercent'],
                     "2attempts": playerStats['twoAttempts'],
+                    "2made": playerStats['twoFg'],
                     "3attempts": playerStats['threeAttempts'],
+                    "3made": playerStats['threeFg'],
+                    "ftAttempts": playerStats['ftAttempts'],
+                    "ft": playerStats['ft'],
                     "points": playerStats['points'],
                     "rebounds": playerStats['totalRb'],
+                    "offensiveRebounds": playerStats['offensiveRb'],
+                    "defensiveRebounds": playerStats['defensiveRb'],
                     "assists": playerStats['assists'],
                     "steals": playerStats['steals'],
                     "blocks": playerStats['blocks'],
                     "turnovers": playerStats['turnovers'],
+                    "fouls": playerStats['personalFouls'],
                     "games": playerStats['games'],
         }
+
+        if advanced_stats:
+            relevant_stats.update({
+                "total_minutes": advanced_stats['minutesPlayed'],
+                "ts%": advanced_stats['tsPercent'],
+                "rebound%": advanced_stats['totalRBPercent'],
+                "offensiveRbPercent": advanced_stats['offensiveRBPercent'],
+                "defensiveRbPercent": advanced_stats['defensiveRBPercent'],
+                "usage%": advanced_stats['usagePercent'],
+                "offensePlusMinus": advanced_stats['offensiveBox'],
+                "defensivePlusMinus": advanced_stats['defensiveBox'],
+                "plusMinus": advanced_stats['box'],
+                "steal%": advanced_stats['stealPercent'],
+                "block%": advanced_stats['blockPercent'],
+                "turnover%": advanced_stats['turnoverPercent'],
+                "": advanced_stats[''],
+
+            })
         
         return relevant_stats
 
