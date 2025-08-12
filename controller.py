@@ -17,4 +17,5 @@ class FantasyController:
         # Will want to switch this to evaluate team function
         output = self.model.evaluate_team(players)
 
-        self.view.output_area.setText(output)
+        #self.view.output_area.setText(output)
+        self.view.output_area.setText((json.dumps(output, indent=4)))
