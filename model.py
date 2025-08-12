@@ -473,5 +473,5 @@ class FantasyModel:
 
         synergy = self.check_synergy(team_fingerprint)
 
-        #return synergy
-        return team_fingerprint
+        return synergy
+        #return team_fingerprint

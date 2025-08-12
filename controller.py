@@ -9,13 +9,19 @@ class FantasyController:
         self.view.submit_btn.clicked.connect(self.on_submit)
 
     def on_submit(self):
-        players = [inp.text() for inp in self.view.inputs]
+
+        # Grab the inputted players, send them to be analyzed as a team
+        pg = self.view.pginput.text()
+        sg = self.view.sginput.text()
+        sf = self.view.sfinput.text()
+        pf = self.view.pfinput.text()
+        c = self.view.cinput.text()
+        players = [pg, sg, sf, pf, c]
 
         self.view.submit_btn.setEnabled(False)
         self.view.output_area.setPlainText('Loading...')
 
-        # Will want to switch this to evaluate team function
         output = self.model.evaluate_team(players)
 
-        #self.view.output_area.setText(output)
-        self.view.output_area.setText((json.dumps(output, indent=4)))
+        self.view.output_area.setText(output)
+        #self.view.output_area.setText((json.dumps(output, indent=4)))
