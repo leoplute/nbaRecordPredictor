@@ -101,4 +101,17 @@ class FantasyView(QWidget):
                 font-size: 24px;
                 color: red;    
             }
+                           
+            #submitBtn {
+                margin-top: 20px;
+                margin-bottom: 20px;
+                margin-left: 100px;
+                margin-right: 100px;
+                height: 30px;
+            }
+                           
+            #outputarea {
+                font-size: 18px; 
+            }
+            
         """)

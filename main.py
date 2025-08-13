@@ -13,6 +13,10 @@ if __name__ == "__main__":
     view = FantasyView()
     controller = FantasyController(model, view)
 
+    # Handle cleanup when app closes
+    def on_app_quit():
+        controller.cleanup()
+
     # Show UI
     view.show()
 

@@ -475,3 +475,4 @@ class FantasyModel:
 
         return synergy
         #return team_fingerprint
+        
