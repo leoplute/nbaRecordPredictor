@@ -2,8 +2,10 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from PySide6.QtCore import QObject, Signal
 
+# This is a helper class to safely update the GUI from any thread,
+# as I want to use the output area while the API fetches data, and then
+# display the output when its ready
 class ResultUpdater(QObject):
-    """Helper class to safely update GUI from any thread"""
     update_result = Signal(str)
     update_error = Signal(str)
     enable_button = Signal()
@@ -39,10 +41,12 @@ class FantasyController:
         players = [pg, sg, sf, pf, c]
 
         self.view.submit_btn.setEnabled(False)
-        self.view.output_area.setPlainText('🏀 Analyzing your starting lineup...\n📊 Fetching player statistics...\n⏳ This may take a moment...')
+        self.view.output_area.setPlainText('🏀 Analyzing your starting lineup...\n\n\n\n📊 Fetching player statistics...\n\n\n\n⏳ This may take a moment...')
 
         self.evaluate_lineup_async(players)
 
+
+    # Nested function
     def evaluate_lineup_async(self, players):
 
         def on_complete(future):
@@ -51,10 +55,10 @@ class FantasyController:
                 # Safely update GUI using signal
                 self.result_updater.update_result.emit(result)
             except Exception as e:
-                error_msg = f"❌ Error analyzing lineup: {str(e)}"
+                error_msg = f"Error analyzing lineup: {str(e)}"
                 self.result_updater.update_error.emit(error_msg)
             finally:
-                # Re-enable button safely
+                # Re-enable submit button 
                 self.result_updater.enable_button.emit()
 
         # Start the evaluation in background
