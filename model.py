@@ -8,19 +8,7 @@ ADVANCED_URL = "https://api.server.nbaapi.com/api/playeradvancedstats"
 
 class FantasyModel:
 
-    def predict_record(self, team_fingerprint):
-        total_score = 0
-        for player_name,fingerprint in team_fingerprint.items():
-            for ability, score in fingerprint.items():
-                total_score += score
-
-        normalized_score = total_score / 20
-
-        # Map normalized_score [0..1] to wins [20..60]
-        wins = int(normalized_score * (70 - 10) + 10)
-
-        return wins
-
+    '''
     def check_redundancy(self, team_fingerprints, threshold = 0.2):
 
         warnings = []
@@ -38,131 +26,242 @@ class FantasyModel:
             if distance < threshold:
                 warnings.append(f"Players '{player1_name}' and '{player2_name}' have very similar playing styles (distance: {distance:.3f})")
 
-        return warnings
+        return warnings'''
 
     def check_synergy(self, team_fingerprints):
         # Take in 5 'fingerprints'
 
         synergy_statement = "Thank you for inputting you team."
 
-        team_abilities = {
+        team_abilities_totals = {
             'scoring_ability': 0,
             'playmaking': 0,
             'rebounding': 0,
             'defense': 0,
         }
+
+        elite_scorers = []
+        elite_playmakers = []
+        elite_rebounders = []
+        elite_defenders =[]
+
         # Add up everyones stats to get collective strengths + weaknesses
         for player_name, fingerprint in team_fingerprints.items():
             for ability, score in fingerprint.items():
-                team_abilities[ability] += score
+
+                if ability == "usage%":
+                    break
+
+                team_abilities_totals[ability] += score
+
+                if score >= 0.75 and ability == "scoring_ability":
+                    elite_scorers.append(player_name)
+                if score >= 0.7 and ability == "playmaking":
+                    elite_playmakers.append(player_name)
+                if score >= 0.7 and ability == "rebounding":
+                    elite_rebounders.append(player_name)
+                if score >= 0.75 and ability == "defense":
+                    elite_defenders.append(player_name) 
 
         synergy_statement += '\nHere is a breakdown of your team: '
+
+        # Critical role analysis (these are must-haves)
+        if len(elite_scorers) == 0:
+            synergy_statement += '\n - CRITICAL: No elite scorer - team will struggle to generate offense'
+        elif len(elite_scorers) >= 3:
+            synergy_statement += '\n - WARNING: Too many elite scorers may lead to ball-sharing issues'
+
+        if len(elite_playmakers) == 0:
+            synergy_statement += '\n - CRITICAL: No elite playmaker - team may struggle with ball movement and creation'
+        elif len(elite_playmakers) >= 3:
+            synergy_statement += '\n - CONCERN: Multiple elite playmakers may clash over ball-handling duties'
+
+        # Less critical but still important
+        if len(elite_defenders) == 0:
+            synergy_statement += '\n - WARNING: No elite defender - team may be vulnerable on defense'
+
+        if len(elite_rebounders) == 0:
+            synergy_statement += '\n - CONCERN: No elite rebounder - team may struggle on the boards'
+
         
-        # Check to make sure scoring is in the sweet spot
-        if team_abilities['scoring_ability'] <= 2:
-            synergy_statement += '\n - The teams scoring ability is not good enough'
+        # Check for usage conflicts (players who need the ball)
+        synergy_statement += "\nNow lets go over the usage rates of the players on the team:"
+        high_usage_players = []
+        average_usage_players = []
+        low_usage_players = []
 
-        if team_abilities['scoring_ability'] >= 3.5:
-            synergy_statement += '\n - Too many scorers on the team'
-
-        # Check to make sure playmaking is in the sweet spot
-        if team_abilities['playmaking'] <= 2:
-            synergy_statement += '\n - The teams playmaking is not good enough'
-
-        if team_abilities['playmaking'] >= 3.5:
-            synergy_statement += '\n - Too much playmaking'
+        for player_name, fingerprint in team_fingerprints.items():
+            if fingerprint['usage%'] >= 25:
+                high_usage_players.append(player_name)
+            if fingerprint['usage%'] <= 14:
+                low_usage_players.append(player_name)
+            else:
+                average_usage_players.append(player_name)
 
 
-        # !!!!! MAKE SURE THAT HIGH REBOUNDING/DEFENSE DOESN'T MEAN A TRADEOFF
+        # Evaluate the team usage breakdown.
+        # - Too many people wanting the ball? too little?, etc...
 
-        # Never too much rebounding
-        if team_abilities['rebounding'] <= 2:
-            synergy_statement += '\n - The teams rebounding is not good enough'
+        # If there is no high usage players:
+        if len(high_usage_players) == 0:
+            synergy_statement += "\n - This squad has no proven stars who can take on a significant role"
+            if len(low_usage_players) == 5:
+                synergy_statement += "\n - No player on this squad had a significant role for a team last year."
+            if len(average_usage_players) == 1 and len(low_usage_players) == 4:
+                synergy_statement += "\n - You have 1 player who has proven to have an average role for a team last year, but 4 who did not."
+            if len(average_usage_players) == 2  and len(low_usage_players) == 3:
+                synergy_statement += "\n - You have 2 players who have proven to have an average role for a team last year, but 3 who did not"
+            if len(average_usage_players) == 3 and len(low_usage_players) == 2:
+                synergy_statement += "\n - You have 3 players who have proven to have an average role for a team last year, maybe one could breakout as a start with the opportunity, outside of them, 2 players with little usage."
+            if len(average_usage_players) == 4  and len(low_usage_players) == 1:
+                synergy_statement += "\n - You have 4 players who have proven to have an average role for a team last year, this is a great chance for one or two to breakout and become a high usage star this year. You have one player with little usage"
+            if len(average_usage_players) == 5:
+                synergy_statement += "\n - You have 5 players who have proven to have an average role for a team last year. This is likely too much usage for one lineup, especially if one were to become a higher usage player."
 
-        # Never too much defense
-        if team_abilities['defense'] <= 2:
-            synergy_statement += '\n - The teams defense is not good enough'
+        # 1 high usage players
+        if len(high_usage_players) == 1:
+            synergy_statement += f"\n - This lineup has one true star who was taking on a big offensive load last year, and that is {high_usage_players[0]}."
+            if len(low_usage_players) == 4:
+                synergy_statement += "\n - Outside of the star, you have 4 players who didnt have much of a role last year."
+                synergy_statement += "\n - If the low usage players could all make a big jump collectively this year, the team could compete, but until then its likely losses ahead."
+            if len(low_usage_players) == 3:
+                synergy_statement += "\n - Outside of the star, the team has 3 low usage players and 1 player who had average role last year."
+                synergy_statement += f"\n - If the {average_usage_players[0]} continued to improve, and another low usage player jumped as well, this could be a solid team."
+            if len(low_usage_players) == 2:
+                synergy_statement += "\n - Outside of the star, the team has 2 players with average roles last year, and 2 players with low usage last year"
+                synergy_statement += "\n - Assuming they all develope and get better in their roles, this team can expect to compete in the coming years."
+            if len(low_usage_players) == 1:    
+                synergy_statement += "\n - Outside of the star, the team has 3 players with average roles and 1 low usage player."
+                synergy_statement += "\n - Assuming they grow together as a team one of the average players jumps into star status, this team is on track to be a contender."
 
+        # 2 high usage players
+        if len(high_usage_players) == 2:
+            synergy_statement += f"\n - This is a star driven lineup, 2 high usage players, {high_usage_players[0]} and {high_usage_players[1]}. Debately the best star count."
+            if len(low_usage_players) == 3:
+                synergy_statement += "\n - After the 2 stars, you do not have another player proven to be able to step into a third star role."
+            if len(average_usage_players) == 2 and len(low_usage_players) == 1:
+                synergy_statement += "\n - After the 2 stars, you have 2 others players who have proven to be able to have roles on their team, and 1 player with low usage, maybe specialists."
+            if len(low_usage_players) == 2 and len(average_usage_players) == 1:
+                synergy_statement += "\n - After the 2 stars, you have 1 other player who has proven to be able to have a role on his team, and 2 players with low usage, maybe specialistst."
+            if len(average_usage_players) == 3:
+                synergy_statement += "\n - After the 2 stars, you have 3 other players who have proven to have roles on their teams, but this may cause for too many people wanting the ball."
+
+        # 3 high usage player
+        if len(high_usage_players) == 3:
+            synergy_statement += "\n - This team is led by a trio of stars, all used to having the ball in their hand."
+            synergy_statement += "\n - With the right coaching and supporting cast, this squad could do some damage, but they all need to have the championship as goal number 1."
+            if len(average_usage_players) == 2:
+                synergy_statement += "\n - Outside of the 3 stars, you have 2 other players who had an average role last year."
+                synergy_statement += "\n - If one or two of them could take on a smaller role and accept less shots, this team could be good."
+            if len(average_usage_players) == 1:
+                synergy_statement += "\n - Outside of the 3 stars, you have 1 role player and 1 player who didn't have much of a role last year. If everyone can keep their roles, this team should be primed to make a run."
+            if len(low_usage_players) == 2:
+                synergy_statement += "\n - Outside of the 3 stars, you have 2 players who did not have a big role last year."
+                synergy_statement += "\n - If they can continue to play their role around the 3 stars, this lineup could win a lot of games"
+
+        # 4 high usage players
+        if len(high_usage_players) == 4:
+            synergy_statement += "\n - You have 4 high usage players, all on the same team. This is likely too much unless 2 of them are able and willing to take on a smaller role." 
+            if len(average_usage_players) == 1:
+                synergy_statement += "\n - Besides the 4 stars, you have 1 role player, another player used to getting some shots"
+                synergy_statement += "\n - With this many people wanting the ball, this is likely to not workout."
+            if len(low_usage_players) == 1:
+                synergy_statement += "\n - Besides the 4 stars, you have 1 player who did not have a significant role last year."
+                synergy_statement += "\n - This means that if 2 guys can take on a smaller role, this lineup has a great opportunity to compete"
+
+        # 5 high usage players
+        if len(high_usage_players) == 5:
+            synergy_statement += "\n - You have 5 high usage players, all on the same team. This is more likely an All-Star lineup rather than one that could truly compete for a championship"
+            synergy_statement += "\n - Between egos and salaries, this team is not likely to stay together long enough to build the chemistry to win at the highest level."
+
+
+        # Check for complementary pairings
+        synergy_statement +="\nHere is a breakdown of potentially strong player combinations: "
+        if len(elite_scorers) == 1 and len(elite_playmakers) == 1:
+            synergy_statement += f'\n - Elite scorer ({elite_scorers[0]}) + playmaker ({elite_playmakers[0]}) combo should create excellent offensive flow'
+
+        if len(elite_scorers) == 2 and len(elite_playmakers) == 1:
+            synergy_statement += f'\n - Elite scorer duo ({elite_scorers[0]} and {elite_scorers[1]}) + playmaker ({elite_playmakers[0]}) means an offense that can score from any spot on the court'
+
+        if len(elite_scorers) == 1 and len(elite_playmakers) == 2:
+            synergy_statement += f'\n - Elite scorer ({elite_scorers[0]}) + playmakers ({elite_playmakers[0]} and {elite_playmakers[1]}) means a star that will be getting set up from lots of players on the court'
+
+        if len(elite_defenders) == 2:
+            synergy_statement += f'\n - 2 Elite defenders ({elite_defenders[0]} and {elite_defenders[1]}) will cause for matchup nightmares'
+
+        if len(elite_defenders) == 3:
+            synergy_statement += f'\n - 3 Elite defenders ({elite_defenders[0]}, {elite_defenders[1]} and {elite_defenders[2]}) will mean every star in the league will have a bad matchup somewhere on the team'
+
+        if len(elite_rebounders) == 1 and len(elite_defenders) == 1:
+            synergy_statement += f'\n - Elite rebounder ({elite_rebounders[0]}) and defender ({elite_defenders[0]}) means the chance of second chance points for the other team goes down'
+
+        if len(elite_defenders) == 2 and len(elite_rebounders) == 1:
+            synergy_statemen += f'\n - Elite defender duo ({elite_defenders[0]} and {elite_defenders[1]}) + elite rebounder ({elite_rebounders[0]}) means lockdown defense with a strong rebounder to stop second chance points'
+
+        if len(elite_rebounders) == 2:
+            synergy_statement += f'\n - 2 Elite rebounders ({elite_rebounders[0]} and {elite_rebounders[1]}) will dominate the boards'
+        
+        if len(elite_scorers) == 3:
+            synergy_statement += f'\n - 3 Elite scorers ({elite_scorers[0]}, {elite_scorers[1]} and {elite_scorers[2]}) will give the team a scoring option at all times.'
+
+        if len(elite_playmakers) == 2:
+            synergy_statement += f"\n - 2 Elite playmakers ({elite_playmakers[0]} and {elite_playmakers[1]}) will be able to set up any teammate"
+
+
+        
+        '''
+
+        # Check for quality role players (good at multiple things but not elite at any)
+        role_players = []
+        specialists = []
+
+        for player_name, fingerprint in team_fingerprints.items():
+            max_skill = max(fingerprint.values())
+            avg_skill = sum(fingerprint.values()) / 4
+            
+            # Well-rounded role player
+            if max_skill < 0.85 and avg_skill >= 0.5:
+                role_players.append(player_name)
+            # Specialist (elite at one thing, weak elsewhere)
+            elif max_skill >= 0.85 and avg_skill < 0.5:
+                specialists.append(player_name)
+
+        if len(role_players) >= 2:
+            synergy_statement += f'\n + STRENGTH: {len(role_players)} versatile role players provide good depth'
+        if len(specialists) >= 3:
+            synergy_statement += '\n - CONCERN: Too many one-dimensional players may hurt versatility'
+
+        # Check for concerning gaps
+        total_offense = team_abilities_totals['scoring_ability'] + team_abilities_totals['playmaking']
+        total_defense = team_abilities_totals['defense'] + team_abilities_totals['rebounding']
+
+        if total_offense < 3.5:
+            synergy_statement += '\n - CRITICAL: Overall offensive talent is too low'
+        if total_defense < 3.5:
+            synergy_statement += '\n - WARNING: Overall defensive talent may be insufficient'
+
+
+    
+        
+        
         redundancies = self.check_redundancy(team_fingerprints)
         if redundancies:
             synergy_statement += "\nHere are some players who might be redundant to have on the team:"
             for warning in redundancies:
-                synergy_statement += f"\n - {warning}"
+                synergy_statement += f"\n - {warning}"'''
 
 
         # Look for concerning player profiles ( ex : no player w/ high playmaking/scoring )
 
-        synergy_statement += "\nHere is a breakdown of any player with unique player profiles:"
-
-        high = 0.6
-        mid = 0.4
-        low = 0.2
-
-        elite_scorers = 0
-        elite_playmakers = 0
-        elite_rebounders = 0
-        elite_defenders = 0
-
-        for player_name, fingerprint in team_fingerprints.items():
-            scoring = fingerprint['scoring_ability']
-            playmaking = fingerprint['playmaking']
-            rebounding = fingerprint['rebounding']
-            defense = fingerprint['defense']
-            
-            if scoring >= high:
-                elite_scorers += 1
-
-            if playmaking >= high:
-                elite_playmakers += 1
-
-            if rebounding >= high:
-                elite_rebounders += 1
-
-            if defense >= high:
-                elite_defenders += 1
-
-            if scoring <= low and playmaking <= low and rebounding <= low and defense <= low:
-                synergy_statement += f"\n - {player_name}, Not a good player. Low on everything"
-
-            if scoring >= high and playmaking <= low and rebounding <= low and defense <= low:
-                synergy_statement += f"\n - {player_name}, High volume scorer, but thats all."
-
-            if scoring <= low and playmaking <= low and rebounding <= low and defense >= high:
-                synergy_statement += f"\n - {player_name}, Great defender, thats about it"
-
-            if scoring > low and playmaking > low and rebounding > low and defense > low and scoring < high and playmaking < high and rebounding < high and defense < high:
-                synergy_statement += f"\n - {player_name}, Very average, not bad at anything, but not great at anything either"
-
-
-        # Make sure the team has an elite scorer, playmaker, rebounder, and defender
-        synergy_statement += "\nLets make sure the team has an elite player for everything:"
-
-        if elite_scorers == 0:
-            synergy_statement +="\n - The team is lacking an elite scorer"
-
-        if elite_playmakers == 0:
-            synergy_statement +="\n - The team is lacking an elite playmaker"
-
-        if elite_rebounders == 0:
-            synergy_statement +="\n - The team is lacking an elite rebounder"
-
-        if elite_defenders == 0:
-            synergy_statement +="\n - The team is lacking an elite defender"
-
         
-        # Predict a record out of 82 games
-        wins = self.predict_record(team_fingerprints)
-        losses = 82 - wins
-        synergy_statement += "\nNow, here is a record prediction for this team: "
-        synergy_statement += f"\n - Wins: {wins}, Losses: {losses}, {wins} - {losses}"
+        # Predict a record out of 82 games"""
 
         return synergy_statement
     
-    def normalize(self, value, min_val, max_val):
-        return max(0, min(1, (value - min_val) / (max_val - min_val)))
+
+    #########################################################################################################################
     
-    def percentile_normalize(self, value, percentiles):
-        """
+    """
         Normalize based on percentile ranges rather than absolute min/max.
         This creates more realistic distributions.
         
@@ -170,7 +269,8 @@ class FantasyModel:
             value: The stat value to normalize
             percentiles: Dict with keys like 'p10', 'p50', 'p90' representing
                         the 10th, 50th, and 90th percentiles for this stat
-        """
+    """
+    def percentile_normalize(self, value, percentiles):
         if value <= percentiles['p10']:
             return 0.0
         elif value >= percentiles['p90']:
@@ -356,7 +456,8 @@ class FantasyModel:
             'scoring_ability': self.calculate_scoring_ability(player_stats),
             'playmaking': self.calculate_playmaking(player_stats),
             'rebounding': self.calculate_rebounding(player_stats),
-            'defense': self.calculate_defensive_ability(player_stats)
+            'defense': self.calculate_defensive_ability(player_stats),
+            'usage%': player_stats['usage%'],
         }
         return fingerprint
 
@@ -504,14 +605,6 @@ class FantasyModel:
         if len(players) != 5:
             return "Enter 5 players"
 
-        params = {
-            "page": 1,
-            "pageSize": 1000,
-            "season": season
-        }
-
-        headers = {"accept": "application/json"}
-
         teamStats = {}
 
         for player in players:
@@ -539,5 +632,5 @@ class FantasyModel:
 
         synergy = self.check_synergy(team_fingerprint)
 
-        #return synergy
-        return json.dumps(team_fingerprint, indent=4)
+        return synergy
+        #return json.dumps(team_fingerprint, indent=4)
