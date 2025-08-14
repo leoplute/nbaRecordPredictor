@@ -8,84 +8,72 @@ ADVANCED_URL = "https://api.server.nbaapi.com/api/playeradvancedstats"
 
 class FantasyModel:
 
-    '''
-    def check_redundancy(self, team_fingerprints, threshold = 0.2):
-
-        warnings = []
-
-        player_pairs = itertools.combinations(team_fingerprints.items(), 2)
-    
-        for (player1_name, fp1), (player2_name, fp2) in player_pairs:
-            # Calculate Euclidean distance between their fingerprints
-            sum_sq = 0
-            for ability in fp1:
-                diff = fp1[ability] - fp2[ability]
-                sum_sq += diff * diff
-            distance = math.sqrt(sum_sq)
+    def get_elite_good_bad_statement(self, elite_scorers, good_scorers, bad_scorers, elite_playmakers, good_playmakers, 
+                                        bad_playmakers, elite_rebounders, good_rebounders, bad_rebounders, elite_defenders,
+                                        good_defenders, bad_defenders):
+        synergy_statement = '\nHere is a breakdown of your team: '
         
-            if distance < threshold:
-                warnings.append(f"Players '{player1_name}' and '{player2_name}' have very similar playing styles (distance: {distance:.3f})")
-
-        return warnings'''
-
-    def check_synergy(self, team_fingerprints):
-        # Take in 5 'fingerprints'
-
-        synergy_statement = "Thank you for inputting you team."
-
-        team_abilities_totals = {
-            'scoring_ability': 0,
-            'playmaking': 0,
-            'rebounding': 0,
-            'defense': 0,
-        }
-
-        elite_scorers = []
-        elite_playmakers = []
-        elite_rebounders = []
-        elite_defenders =[]
-
-        # Add up everyones stats to get collective strengths + weaknesses
-        for player_name, fingerprint in team_fingerprints.items():
-            for ability, score in fingerprint.items():
-
-                if ability == "usage%":
-                    break
-
-                team_abilities_totals[ability] += score
-
-                if score >= 0.75 and ability == "scoring_ability":
-                    elite_scorers.append(player_name)
-                if score >= 0.7 and ability == "playmaking":
-                    elite_playmakers.append(player_name)
-                if score >= 0.7 and ability == "rebounding":
-                    elite_rebounders.append(player_name)
-                if score >= 0.75 and ability == "defense":
-                    elite_defenders.append(player_name) 
-
-        synergy_statement += '\nHere is a breakdown of your team: '
-
         # Critical role analysis (these are must-haves)
+        # Is there an elite, good, or bad scorer? if so, how many and who
         if len(elite_scorers) == 0:
-            synergy_statement += '\n - CRITICAL: No elite scorer - team will struggle to generate offense'
-        elif len(elite_scorers) >= 3:
-            synergy_statement += '\n - WARNING: Too many elite scorers may lead to ball-sharing issues'
-
-        if len(elite_playmakers) == 0:
-            synergy_statement += '\n - CRITICAL: No elite playmaker - team may struggle with ball movement and creation'
-        elif len(elite_playmakers) >= 3:
-            synergy_statement += '\n - CONCERN: Multiple elite playmakers may clash over ball-handling duties'
-
-        # Less critical but still important
-        if len(elite_defenders) == 0:
-            synergy_statement += '\n - WARNING: No elite defender - team may be vulnerable on defense'
-
-        if len(elite_rebounders) == 0:
-            synergy_statement += '\n - CONCERN: No elite rebounder - team may struggle on the boards'
-
+            if not good_scorers:
+                synergy_statement += '\n - No good or elite scorer - team will struggle to generate offense'
+            else:
+                synergy_statement += f'\n - No elite scorers, but there are good scorers on the team ({self.get_players_string(good_scorers)})'
+        else:
+            synergy_statement += f'\n - Your team has {len(elite_scorers)} elite scorer(s) ({self.get_players_string(elite_scorers)})'
+            if good_scorers:
+                synergy_statement += f'\n - Your team has {len(good_scorers)} good scorer(s) ({self.get_players_string(good_scorers)})'
         
-        # Check for usage conflicts (players who need the ball)
-        synergy_statement += "\nNow lets go over the usage rates of the players on the team:"
+        if len(bad_scorers) != 0:
+            synergy_statement += f'\n - Your team has {len(bad_scorers)} bad scorer(s) ({self.get_players_string(bad_scorers)})'
+
+        # Is there an elite, good, or bad playmaker? if so, how many and who
+        if len(elite_playmakers) == 0:
+            if not good_playmakers:
+                synergy_statement += '\n - No good or elite playmaker - team may struggle with ball movement and creation'
+            else:
+                synergy_statement += f'\n - No elite playmakers, but there are good playmakers on the team ({self.get_players_string(good_playmakers)})'
+        else:
+            synergy_statement += f'\n - Your team has {len(elite_playmakers)} elite playmaker(s) ({self.get_players_string(elite_playmakers)})'
+            if good_playmakers:
+                synergy_statement += f'\n - Your team has {len(good_playmakers)} good playmaker(s) ({self.get_players_string(good_playmakers)})'
+
+        if len(bad_playmakers) != 0:
+            synergy_statement += f'\n - Your team has {len(bad_playmakers)} bad playmaker(s) ({self.get_players_string(bad_playmakers)})'
+
+        # Is there an elite, good, or bad defender? if so, how many and who
+        if len(elite_defenders) == 0:
+            if not good_defenders:
+                synergy_statement += '\n - No good or elite defender - team may be vulnerable on defense'
+            else:
+                synergy_statement += f'\n - No elite defenders, but there are good defenders on the team ({self.get_players_string(good_defenders)})'
+        else:
+            synergy_statement += f'\n - Your team has {len(elite_defenders)} elite defender(s) ({self.get_players_string(elite_defenders)})'
+            if good_defenders:
+                synergy_statement += f'\n - Your team has {len(good_defenders)} good defender(s) ({self.get_players_string(good_defenders)})'
+
+        if len(bad_defenders) != 0:
+            synergy_statement += f'\n - Your team has {len(bad_defenders)} bad defender(s) ({self.get_players_string(bad_defenders)})'
+
+        # Is there an elite, good, or bad rebounder? if so, how many and who
+        if len(elite_rebounders) == 0:
+            if not good_rebounders:
+                synergy_statement += '\n - No good or elite rebounder - team may struggle on the boards'
+            else:
+                synergy_statement += f'\n - No elite rebounders, but the team does have good rebounder(s) ({self.get_players_string(good_rebounders)})'
+        else:
+            synergy_statement += f'\n - Your team has {len(elite_rebounders)} elite rebounder(s) ({self.get_players_string(elite_rebounders)})'
+            if good_rebounders:
+                synergy_statement += f'\n - Your team has {len(good_rebounders)} good rebounder(s) ({self.get_players_string(good_rebounders)})'
+
+        if len(bad_rebounders) != 0:
+            synergy_statement += f'\n - Your team has {len(bad_rebounders)} bad rebounder(s) ({self.get_players_string(bad_rebounders)})'
+
+        return synergy_statement
+
+    def get_usage_statement(self, team_fingerprints):
+        synergy_statement = "\nNow lets go over the usage rates of the players on the team:"
         high_usage_players = []
         average_usage_players = []
         low_usage_players = []
@@ -97,10 +85,6 @@ class FantasyModel:
                 low_usage_players.append(player_name)
             else:
                 average_usage_players.append(player_name)
-
-
-        # Evaluate the team usage breakdown.
-        # - Too many people wanting the ball? too little?, etc...
 
         # If there is no high usage players:
         if len(high_usage_players) == 0:
@@ -174,62 +158,185 @@ class FantasyModel:
             synergy_statement += "\n - You have 5 high usage players, all on the same team. This is more likely an All-Star lineup rather than one that could truly compete for a championship"
             synergy_statement += "\n - Between egos and salaries, this team is not likely to stay together long enough to build the chemistry to win at the highest level."
 
+        return synergy_statement
 
-        # Check for complementary pairings
-        synergy_statement +="\nHere is a breakdown of potentially strong player combinations: "
+    def get_player_combos(self, elite_scorers, elite_playmakers, elite_rebounders, elite_defenders):
+        synergy_statement = "\nHere is a breakdown of potentially strong player combinations: "
         if len(elite_scorers) == 1 and len(elite_playmakers) == 1:
             synergy_statement += f'\n - Elite scorer ({elite_scorers[0]}) + playmaker ({elite_playmakers[0]}) combo should create excellent offensive flow'
 
         if len(elite_scorers) == 2 and len(elite_playmakers) == 1:
-            synergy_statement += f'\n - Elite scorer duo ({elite_scorers[0]} and {elite_scorers[1]}) + playmaker ({elite_playmakers[0]}) means an offense that can score from any spot on the court'
+            synergy_statement += f'\n - Elite scorer duo ({self.get_players_string(elite_scorers)}) + playmaker ({elite_playmakers[0]}) means an offense that can score from any spot on the court'
 
         if len(elite_scorers) == 1 and len(elite_playmakers) == 2:
-            synergy_statement += f'\n - Elite scorer ({elite_scorers[0]}) + playmakers ({elite_playmakers[0]} and {elite_playmakers[1]}) means a star that will be getting set up from lots of players on the court'
+            synergy_statement += f'\n - Elite scorer ({elite_scorers[0]}) + playmakers ({self.get_players_string(elite_playmakers)}) means a star that will be getting set up from lots of players on the court'
 
         if len(elite_defenders) == 2:
-            synergy_statement += f'\n - 2 Elite defenders ({elite_defenders[0]} and {elite_defenders[1]}) will cause for matchup nightmares'
+            synergy_statement += f'\n - 2 Elite defenders ({self.get_players_string(elite_defenders)}) will cause for matchup nightmares'
 
         if len(elite_defenders) == 3:
-            synergy_statement += f'\n - 3 Elite defenders ({elite_defenders[0]}, {elite_defenders[1]} and {elite_defenders[2]}) will mean every star in the league will have a bad matchup somewhere on the team'
+            synergy_statement += f'\n - 3 Elite defenders ({self.get_players_string(elite_defenders)}) will mean every star in the league will have a bad matchup somewhere on the team'
 
         if len(elite_rebounders) == 1 and len(elite_defenders) == 1:
             synergy_statement += f'\n - Elite rebounder ({elite_rebounders[0]}) and defender ({elite_defenders[0]}) means the chance of second chance points for the other team goes down'
 
         if len(elite_defenders) == 2 and len(elite_rebounders) == 1:
-            synergy_statemen += f'\n - Elite defender duo ({elite_defenders[0]} and {elite_defenders[1]}) + elite rebounder ({elite_rebounders[0]}) means lockdown defense with a strong rebounder to stop second chance points'
+            synergy_statement += f'\n - Elite defender duo ({self.get_players_string(elite_defenders)}) + elite rebounder ({elite_rebounders[0]}) means lockdown defense with a strong rebounder to stop second chance points'
 
         if len(elite_rebounders) == 2:
-            synergy_statement += f'\n - 2 Elite rebounders ({elite_rebounders[0]} and {elite_rebounders[1]}) will dominate the boards'
+            synergy_statement += f'\n - 2 Elite rebounders ({self.get_players_string(elite_rebounders)}) will dominate the boards'
         
         if len(elite_scorers) == 3:
-            synergy_statement += f'\n - 3 Elite scorers ({elite_scorers[0]}, {elite_scorers[1]} and {elite_scorers[2]}) will give the team a scoring option at all times.'
+            synergy_statement += f'\n - 3 Elite scorers ({self.get_players_string(elite_scorers)}) will give the team a scoring option at all times.'
 
         if len(elite_playmakers) == 2:
-            synergy_statement += f"\n - 2 Elite playmakers ({elite_playmakers[0]} and {elite_playmakers[1]}) will be able to set up any teammate"
-
-
+            synergy_statement += f"\n - 2 Elite playmakers ({self.get_players_string(elite_playmakers)}) will be able to set up any teammate"
         
-        '''
+        return synergy_statement
 
+    def check_redundancy(self, team_fingerprints, threshold=0.2):
+        redundant_pairs = []
+        
+        for (name1, fp1), (name2, fp2) in itertools.combinations(team_fingerprints.items(), 2):
+            abilities = ['scoring_ability', 'playmaking', 'rebounding', 'defense']
+            
+            distance = math.sqrt(sum((fp1[ability] - fp2[ability])**2 for ability in abilities))
+            
+            if distance < threshold:
+                redundant_pairs.append((name1, name2, distance))
+        
+        return redundant_pairs
+    
+    def get_players_string(self, players):
+        if len(players) > 1:
+            result = ", ".join(players[:-1]) + ", and " + players[-1]
+        else:
+            result = players[0] if players else ""
+        return result
+
+    def check_synergy(self, team_fingerprints):
+        # Take in 5 'fingerprints'
+
+        synergy_statement = "Thank you for inputting you team."
+
+        team_abilities_totals = {
+            'scoring_ability': 0,
+            'playmaking': 0,
+            'rebounding': 0,
+            'defense': 0,
+        }
+
+        # Based on the players fingerprints, put them in these lists if they meet the thresholds
+        # to use when evaluating where team is lacking + needing
+        elite_scorers = []
+        elite_playmakers = []
+        elite_rebounders = []
+        elite_defenders =[]
+        good_scorers = []
+        good_playmakers =[]
+        good_rebounders = []
+        good_defenders = []
+        bad_scorers = []
+        bad_playmakers =[]
+        bad_rebounders =[]
+        bad_defenders = []
+
+        # Add up everyones stats to get collective strengths + weaknesses, as well as get lists
+        # of everyone who is elite, good, and bad at scoring, playmaking, rebounding, and defense.
+        for player_name, fingerprint in team_fingerprints.items():
+            for ability, score in fingerprint.items():
+
+                if ability == "usage%":
+                    break
+
+                team_abilities_totals[ability] += score
+
+                if ability == 'scoring_ability':
+                    if score >= 0.75:
+                        elite_scorers.append(player_name)
+                    if score < 0.75 and score > 0.5:
+                        good_scorers.append(player_name)
+                    if score <= 0.3:
+                        bad_scorers.append(player_name)
+
+                if ability == 'playmaking':
+                    if score >= 0.7:
+                        elite_playmakers.append(player_name)
+                    if score < 0.7 and score > 0.45:
+                        good_playmakers.append(player_name)
+                    if score <= 0.3:
+                        bad_playmakers.append(player_name)
+
+                if ability == 'rebounding':
+                    if score >= 0.7:
+                        elite_rebounders.append(player_name)
+                    if score < 0.7 and score > 0.45:
+                        good_rebounders.append(player_name)
+                    if score <= 0.3:
+                        bad_rebounders.append(player_name)
+
+                if ability == 'defense':
+                    if score >= 0.75:
+                        elite_defenders.append(player_name)
+                    if score < 0.75 and score > 0.5:
+                        good_defenders.append(player_name)
+                    if score <= 0.3:
+                        bad_defenders.append(player_name)
+
+        synergy_statement += '\nHere is a breakdown of your team: '
+        
+        # Critical role analysis (these are must-haves)
+        # Is there an elite, good, or bad scorer? if so, how many and who
+        elite_good_bad_statement = self.get_elite_good_bad_statement(elite_scorers=elite_scorers, good_scorers=good_scorers, 
+                                    bad_scorers=bad_scorers, elite_playmakers=elite_playmakers, good_playmakers=good_playmakers,
+                                    bad_playmakers=bad_playmakers, elite_rebounders=elite_rebounders, good_rebounders=good_rebounders,
+                                    bad_rebounders=bad_rebounders, elite_defenders=elite_defenders, good_defenders=good_defenders, bad_defenders=bad_defenders)
+        synergy_statement += str(elite_good_bad_statement)
+
+
+        # Evaluate the team usage breakdown.
+        # - Too many people wanting the ball? too little?, etc...
+        usage_string = self.get_usage_statement(team_fingerprints=team_fingerprints)
+        synergy_statement += str(usage_string)
+
+
+        # Check for complementary pairings
+        # MAKE SURE IT IS NOT THE SAME PLAYER
+        player_combos_string = self.get_player_combos(elite_scorers=elite_scorers, elite_defenders=elite_defenders, elite_rebounders=elite_rebounders, elite_playmakers=elite_playmakers)
+        synergy_statement += str(player_combos_string)
+
+
+        # Check for redundant players that'll play the same role on the court
+        redundancies = self.check_redundancy(team_fingerprints)
+        if redundancies:
+            synergy_statement += "\nHere are some players who might be redundant to have on the team:"
+            for bad_pair in redundancies:
+                synergy_statement += f"\n - {bad_pair[0]} and {bad_pair[1]} fill the same role"
+            synergy_statement += "Taking one of these players out of your lineup and adding a differnt kind of player may result in more wins"
+
+        '''
         # Check for quality role players (good at multiple things but not elite at any)
         role_players = []
         specialists = []
 
+        synergy_statement
         for player_name, fingerprint in team_fingerprints.items():
             max_skill = max(fingerprint.values())
             avg_skill = sum(fingerprint.values()) / 4
             
             # Well-rounded role player
-            if max_skill < 0.85 and avg_skill >= 0.5:
+            if max_skill < 0.80 and avg_skill >= 0.45:
                 role_players.append(player_name)
             # Specialist (elite at one thing, weak elsewhere)
-            elif max_skill >= 0.85 and avg_skill < 0.5:
+            elif max_skill >= 0.80 and avg_skill < 0.45:
                 specialists.append(player_name)
 
         if len(role_players) >= 2:
-            synergy_statement += f'\n + STRENGTH: {len(role_players)} versatile role players provide good depth'
+            synergy_statement += f'\n - The team has {len(role_players)} versatile role players that provide good depth'
         if len(specialists) >= 3:
-            synergy_statement += '\n - CONCERN: Too many one-dimensional players may hurt versatility'
+            synergy_statement += '\n - Too many one-dimensional players may hurt versatility'
+        '''
+        '''
 
         # Check for concerning gaps
         total_offense = team_abilities_totals['scoring_ability'] + team_abilities_totals['playmaking']
@@ -239,17 +346,7 @@ class FantasyModel:
             synergy_statement += '\n - CRITICAL: Overall offensive talent is too low'
         if total_defense < 3.5:
             synergy_statement += '\n - WARNING: Overall defensive talent may be insufficient'
-
-
-    
-        
-        
-        redundancies = self.check_redundancy(team_fingerprints)
-        if redundancies:
-            synergy_statement += "\nHere are some players who might be redundant to have on the team:"
-            for warning in redundancies:
-                synergy_statement += f"\n - {warning}"'''
-
+        '''
 
         # Look for concerning player profiles ( ex : no player w/ high playmaking/scoring )
 
@@ -257,10 +354,8 @@ class FantasyModel:
         # Predict a record out of 82 games"""
 
         return synergy_statement
-    
 
-    #########################################################################################################################
-    
+
     """
         Normalize based on percentile ranges rather than absolute min/max.
         This creates more realistic distributions.
