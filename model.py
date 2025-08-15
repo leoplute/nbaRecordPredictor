@@ -105,7 +105,7 @@ class FantasyModel:
 
         # 2 high usage players
         if len(high_usage_players) == 2:
-            synergy_statement += f"\n - This is a star driven lineup, 2 high usage players, {high_usage_players[0]} and {high_usage_players[1]}. Debately the best star count."
+            synergy_statement += f"\n - This is a star driven lineup, 2 high usage players, {high_usage_players[0]} and {high_usage_players[1]}."
             if len(low_usage_players) == 3:
                 synergy_statement += f"\n - After the 2 stars, you do not have another player proven to be able to step into a third star role. ({self.get_players_string(low_usage_players)})"
             if len(average_usage_players) == 2 and len(low_usage_players) == 1:
