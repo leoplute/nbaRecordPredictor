@@ -595,7 +595,9 @@ class FantasyModel:
             player_fingerprint = self.statsCalculator.fingerprint(stats)
             team_fingerprint[player_name] = player_fingerprint
 
-        output = self.outputGenerator.generate_final_output(team_fingerprint)
+        analysis = self.teamAnalyzer.analyze_team(team_fingerprint)
+
+        output = self.outputGenerator.generate_final_output(analysis)
 
         synergy = self.check_synergy(team_fingerprint)
 

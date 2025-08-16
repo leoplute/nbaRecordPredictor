@@ -10,6 +10,7 @@ class ResultUpdater(QObject):
     update_error = Signal(str)
     update_loading = Signal(str)
     enable_button = Signal()
+    stop_loading = Signal()
 
 class FantasyController:
     def __init__(self, model, view):
@@ -23,6 +24,7 @@ class FantasyController:
         self.result_updater.update_error.connect(lambda text: self.view.output_area.setText(text))
         self.result_updater.enable_button.connect(lambda: self.view.submit_btn.setEnabled(True))
         self.result_updater.update_loading.connect(lambda text: self.view.output_area.setHtml(text))
+        self.result_updater.stop_loading.connect(self.stop_loading_animation)
 
         # Loading animation setup
         self.loading_timer = QTimer()
@@ -40,7 +42,7 @@ class FantasyController:
 
         # Connect signals to slots
         self.view.submit_btn.clicked.connect(self.on_submit)
-        self.view.output_area.setPlainText("Welcome to the lineup analyzer. Put in a starting 5 and submit to get an evaluation of the team")
+        self.view.output_area.setHtml('<div style="text-align: center; font-size: 18px; font-weight: bold;">Welcome to the lineup analyzer. Put in a starting 5 and submit to get an evaluation of the team</div')
 
 
     def update_loading_message(self):
@@ -71,7 +73,7 @@ class FantasyController:
         c = self.view.cinput.text()
 
         if not pg or not sg or not sf or not pf or not c:
-            self.view.output_area.setPlainText("Please have a player for every position")
+            self.view.output_area.setHtml('<div style="text-align: center; font-size: 18; font-weight: bold;">Please have a player for every position</div>')
             return
 
         players = [pg, sg, sf, pf, c]
@@ -88,13 +90,12 @@ class FantasyController:
 
         def on_complete(future):
             try:
-                self.stop_loading_animation()
-
+                self.result_updater.stop_loading.emit()
                 result = future.result()
                 # Safely update GUI using signal
                 self.result_updater.update_result.emit(result)
             except Exception as e:
-                self.stop_loading_animation()
+                self.result_updater.stop_loading.emit()
                 error_msg = f"Error analyzing lineup: {str(e)}"
                 self.result_updater.update_error.emit(error_msg)
             finally:
