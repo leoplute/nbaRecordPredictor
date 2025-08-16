@@ -4,6 +4,8 @@ import math
 import itertools
 from grab_player_data import grabPlayerData
 from stats_calculator import statsCalculator
+from team_analyzer import teamAnalyzer
+from output_generator import outputGenerator
 
 BASE_URL = "https://api.server.nbaapi.com/api/playertotals"
 ADVANCED_URL = "https://api.server.nbaapi.com/api/playeradvancedstats"
@@ -13,6 +15,8 @@ class FantasyModel:
     def __init__(self):
         self.grabPlayerData = grabPlayerData()
         self.statsCalculator = statsCalculator()
+        self.teamAnalyzer = teamAnalyzer()
+        self.outputGenerator = outputGenerator()
 
     def get_elite_good_average_bad_statement(self, elite_scorers, good_scorers, average_scorers, bad_scorers, 
     elite_playmakers, good_playmakers, average_playmakers, bad_playmakers, elite_rebounders, good_rebounders, 
@@ -591,7 +595,10 @@ class FantasyModel:
             player_fingerprint = self.statsCalculator.fingerprint(stats)
             team_fingerprint[player_name] = player_fingerprint
 
+        output = self.outputGenerator.generate_final_output(team_fingerprint)
+
         synergy = self.check_synergy(team_fingerprint)
 
-        return synergy
+        #return synergy
         #return json.dumps(team_fingerprint, indent=4)
+        return output
