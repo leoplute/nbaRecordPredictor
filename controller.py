@@ -57,7 +57,7 @@ class FantasyController:
         """Start the loading message animation"""
         self.loading_message_index = 0  
         self.update_loading_message() 
-        self.loading_timer.start(1500)  
+        self.loading_timer.start(1600)  
 
     def stop_loading_animation(self):
         """Stop the loading message animation"""

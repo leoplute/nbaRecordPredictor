@@ -185,6 +185,62 @@ class outputGenerator:
 
         return combo_statement
 
+
+    def generate_redundancy_statement(self, redundant_pairs, player_roles):
+
+        redundancy_statement = '\n\nLets look for any redundant player pairs and what roles your lineup has:'
+        redundancy_statement += '\nRoles first:'
+
+        for player, role in player_roles.items():
+            redundancy_statement += f"\n - {player}'s role: {role}"
+
+        redundancy_statement += f'\n\nNow redudant pairs: '
+        for players, role, message in redundant_pairs:
+            redundancy_statement += f'\n - Players: {self.get_players_string(players)} both fill the role {role}.'
+
+        return redundancy_statement
+    
+
+    def generate_critical_gaps_statement(self, gaps, abundances):
+            
+        # Is there any gaps
+        if gaps:
+            gaps_statement = '\n\nWhat critical gaps does your team have: '
+            gaps_statement += f'\n - '
+            for gap in gaps:
+                gaps_statement += f'Gap: {gap}, '
+
+            # If there is gaps, what could fill them?
+            if abundances:
+                gaps_statement += f'\n\nWhat parts of the team could you sacrifice to fill those gaps?: '
+                gaps_statement += f'\n - '
+                for ability in abundances:
+                    gaps_statement += f'{ability}, '
+
+        else:
+            gaps_statement = '\n\nNo critical gaps found in the lineup.'
+
+        return gaps_statement
+    
+    
+    def generate_aggregate_gaps_statement(self, aggregate_gaps):
+
+        if aggregate_gaps:
+            gaps_statement = "\n\nHere is where your teams totals don't quite meet a good teams needs: "
+
+            for skill in aggregate_gaps:
+                gaps_statement += f"\n - The team is lacking in {skill}"
+
+        else:
+            gaps_statement = '\n\nTeam meets the needed totals for all skills'
+
+        return gaps_statement
+    
+    
+    def generate_record_statement(self, wins, losses):
+        record_statement = '\n\nBased on your players stats, usage rates, and tendencies, a predicted record for this squad is:'
+        record_statement += f'\n - {wins} wins and {losses} losses, {wins} - {losses}'
+        return record_statement
     
 
     def generate_final_output(self, team_analysis):
@@ -202,6 +258,20 @@ class outputGenerator:
         # Get the good combination statement
         combo_statement = self.generate_combo_statement(team_analysis['good_combos'])
         final_output += combo_statement
-        
 
+        # Get the statement for any redundancy amongst players
+        redundancy_statement = self.generate_redundancy_statement(team_analysis['redundant_pairs'], team_analysis['player_roles'])
+        final_output += redundancy_statement
+
+        # Get the statement on any critical gaps + abundances
+        critical_gaps_statement = self.generate_critical_gaps_statement(team_analysis['gaps'], team_analysis['abundances'])
+        final_output += critical_gaps_statement
+
+        # Get the statement on any aggregate gaps
+        aggregate_gaps_statement = self.generate_aggregate_gaps_statement(team_analysis['aggregate_gaps'])
+        final_output += aggregate_gaps_statement
+
+        # Get the predicted record statement
+        predicted_record_statement = self.generate_record_statement(team_analysis['wins'], team_analysis['losses'])
+        
         return final_output

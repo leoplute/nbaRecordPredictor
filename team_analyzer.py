@@ -277,122 +277,88 @@ class teamAnalyzer:
         
         return redundant_pairs, player_roles
     
-    def check_critical_gaps(self, elite_scorers, good_scorers, elite_playmakers, good_playmakers, elite_rebounders, 
-                good_rebounders, elite_defenders, good_defenders):
+    def check_critical_gaps(self, player_categories):
+        gaps = []
+        abundance = []
+
+        if not player_categories['scoring']['elite'] and not player_categories['scoring']['good']:
+            gaps.append('No scoring')
+
+        if not player_categories['scoring']['elite'] and player_categories['scoring']['good'] and len(player_categories['scoring']['good']) < 3:
+            gaps.append("Lacking scoring")
+
+        if not player_categories['playmaking']['elite'] and not player_categories['playmaking']['good']:
+            gaps.append('No playmaking')
+
+        if not player_categories['playmaking']['elite'] and len(player_categories['playmaking']['good']) == 1:
+            gaps.append("Lacking playmaking")
         
-        gaps_statement = "\n\nLets check if the team has any major gaps: "
+        if not player_categories['rebounding']['elite'] and not player_categories['rebounding']['good']:
+            gaps.append("No rebounding")
 
-        found_gap = False
+        if not player_categories['rebounding']['elite'] and len(player_categories['rebounding']['good']) == 1:
+            gaps.append('Lacking rebounding')
 
-        if not elite_scorers and not good_scorers:
-            gaps_statement += f"\n - The team is severely lacking a competent scoring option, possibly even a couple."
-            found_gap = True
+        if not player_categories['defense']['elite'] and not player_categories['defense']['good']:
+            gaps.append('No defense')
 
-        if not elite_scorers and good_scorers and len(good_scorers) < 3:
-            gaps_statement += f"\n - The team is lacking enough scoring production to compete in todays NBA."
-            found_gap = True
+        if not player_categories['defense']['elite'] and len(player_categories['defense']['good']) == 1:
+            gaps.append('Lacking defense')
 
-        if not elite_playmakers and good_playmakers and len(good_playmakers) < 2:
-            gaps_statement += f"\n - The team is lacking playmaking. Ball movement is likely to be stagnant with little shot creation for others."
-            found_gap = True
+        if not player_categories['defense']['elite'] and not player_categories['rebounding']['elite']:
+            gaps.append('Struggle to slow teams down')
 
-        if not elite_rebounders and good_rebounders and len(good_rebounders) < 2:
-            gaps_statement += f"\n - The team needs more of a presence on the boards."
-            found_gap = True
+        # Check for areas of abundance
 
-        if not elite_rebounders and not good_rebounders:
-            gaps_statement += f"\n - The team is in need of a solid rebounder or two. This team will get killed on the boards"
-            found_gap = True
+        if len(player_categories['playmaking']['elite']) >= 2 and player_categories['playmaking']['good']:
+            abundance.append('Lots of playmaking')
 
-        if not elite_defenders and not good_defenders:
-            gaps_statement += f'\n - This team is in desperate need of a lockdown defender. There is no one to slow down opposing stars from putting up career nights against this lineup.'
-            found_gap = True
+        if len(player_categories['playmaking']['good']) >= 3:
+            abundance.append('Enough playmaking')
 
-        if not elite_defenders and not elite_rebounders:
-            gaps_statement += f'\n - This team will struggle to slow down high octane offenses, with the absense of an elite rebounder and defender, this team will need to score 150 a night to compete.'
-            found_gap = True
+        if len(player_categories['scoring']['elite']) >= 2 and len(player_categories['scoring']['good']) >= 2:
+            abundance.append('Tons of scoring')
+    
+        if len(player_categories['scoring']['good']) >= 4:
+            abundance.append('Lots of scoring')
 
-        if found_gap == False:
-            gaps_statement += f'\n - No major gaps found.'
-        else:
-            gaps_statement += f'\n\nWhat area could the team sacrifice to fill some of those gaps?: '
-            sacrifice_found = False
+        if len(player_categories['rebounding']['elite']) >= 2 and len(player_categories['rebounding']['good']) >= 2:
+            abundance.append('Tons of rebounding')
 
-            if len(elite_playmakers) >= 2 and good_playmakers:
-                gaps_statement += f'\n - The team has plenty of playmaking on the roster, maybe get rid of some playmakers.'
-                sacrifice_found = True
-
-            if len(good_playmakers) >= 3:
-                gaps_statement += f'\n - The team has some pretty good playmakers, sacrificing playmaking for other abilities of need would be a good option here.'
-                sacrifice_found = True
-
-            if len(elite_scorers) >= 2 and len(good_scorers) >= 2:
-                gaps_statement += f'\n - This team has enough high octane scorers, sacrifice some scoring for a more well rounded roster.'
-                sacrifice_found = True
-        
-            if len(good_scorers) >= 4:
-                gaps_statement += f'\n - This team has lots of goods scorers, one will likely step up to elite, meaning lessening some scoring for stats elsewhere will benefit the whole team.'
-                sacrifice_found = True
-
-            if len(elite_rebounders) >= 2 and len(good_rebounders) >= 2:
-                gaps_statement += f'\n - The tea has lots of players that are active on the boards, maybe let go of some rebounding to help out the rest of the roster.'
-                sacrifice_found = True
-
-            if sacrifice_found == False:
-                gaps_statement += f"\n - Team isn't competent enough in any area to sacrifice one for another" 
-
-        return gaps_statement
+        return gaps, abundance
     
 
-    def check_aggregate_gaps(self, team_fingerprints):
-        gaps_statement = "\n\nAggregate Team Gap Analysis:"
-        found_gap = False
+    def check_aggregate_gaps(self, team_fingerprints, team_totals):
 
-        # Calculate team totals
-        totals = {
-            'scoring': sum(fp['scoring_ability'] for fp in team_fingerprints.values()),
-            'playmaking': sum(fp['playmaking'] for fp in team_fingerprints.values()),
-            'defense': sum(fp['defense'] for fp in team_fingerprints.values()),
-            'rebounding': sum(fp['rebounding'] for fp in team_fingerprints.values())
-        }
+        gaps = []
 
-        # Set thresholds (out of 5.0 total possible)
+        # Set thresholds, out of 5 total possible
         thresholds = {
-            'scoring': 2.8,     # Need decent offensive firepower
-            'playmaking': 2.0,  # Need some ball movement
-            'defense': 2.5,     # Defense wins championships
-            'rebounding': 2.2   # Control the boards
+            'scoring_ability': 2.8,     
+            'playmaking': 2.0,  
+            'defense': 2.5,     
+            'rebounding': 2.2   
         }
 
-        for skill, total in totals.items():
+        for skill, total in team_totals.items():
             if total < thresholds[skill]:
-                found_gap = True
-                severity = "CRITICAL" if total < thresholds[skill] * 0.8 else "WARNING"
-                gaps_statement += (
-                    f"\n - {severity}: Team {skill} total ({total:.1f}) "
-                    f"below competitive threshold ({thresholds[skill]:.1f})"
-                )
+                gaps.append(skill)
 
-        if not found_gap:
-            gaps_statement += "\n - No major gaps found."
-
-        return gaps_statement
+        return gaps
     
 
-    def predict_record(self, elite_scorers, good_scorers, bad_scorers, 
-                        elite_defenders, good_defenders, bad_defenders,
-                        elite_playmakers, elite_rebounders, team_fingerprints, redundancies):
+    def predict_record(self, player_categories, team_fingerprints, redundancies):
     
         # Feature engineering
         features = {}
         
         # Star power features
-        features['elite_count'] = len(set(elite_scorers + elite_playmakers + elite_defenders + elite_rebounders))
-        features['scoring_depth'] = len(elite_scorers) + len(good_scorers) * 0.6
-        features['defensive_strength'] = len(elite_defenders) + len(good_defenders) * 0.5
+        features['elite_count'] = len(set(player_categories['scoring']['elite'] + player_categories['playmaking']['elite'] + player_categories['defense']['elite'] + player_categories['rebounding']['elite']))
+        features['scoring_depth'] = len(player_categories['scoring']['elite']) + len(player_categories['scoring']['good']) * 0.6
+        features['defensive_strength'] = len(player_categories['defense']['elite']) + len(player_categories['defense']['good']) * 0.5
         
         # Balance features  
-        features['major_weaknesses'] = len(bad_scorers) + len(bad_defenders)
+        features['major_weaknesses'] = len(player_categories['scoring']['bad']) + len(player_categories['defense']['bad'])
         features['redundancy_penalty'] = len(redundancies) * 2
         
         # Chemistry features
@@ -440,15 +406,24 @@ class teamAnalyzer:
 
         good_combos = self.get_player_combos(player_categories)
 
+        redundant_pairs, player_roles = self.check_redundancy(team_fingerprints)
+
+        gaps, abundances = self.check_critical_gaps(player_categories)
+
+        aggregate_gaps = self.check_aggregate_gaps(team_fingerprints, team_totals)
+
+        wins, losses = self.predict_record(player_categories, team_fingerprints, redundant_pairs)
+
         return {
             'player_categories': player_categories,
             'usage_analysis': usage_analysis,
             'good_combos': good_combos,
-            '''
-            'redundancies': redundancies,
+            'redundant_pairs': redundant_pairs,
             'player_roles': player_roles,
             'gaps': gaps,
+            'abundances': abundances,
             'aggregate_gaps': aggregate_gaps,
-            'predicted_record': {'wins': wins, 'losses': losses},'''
+            'wins': wins, 
+            'losses': losses,
             'team_fingerprints': team_fingerprints
         }
