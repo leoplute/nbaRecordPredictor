@@ -1,9 +1,15 @@
 import requests
+from unidecode import unidecode
 
 BASE_URL = "https://api.server.nbaapi.com/api/playertotals"
 ADVANCED_URL = "https://api.server.nbaapi.com/api/playeradvancedstats"
 
 class grabPlayerData:
+
+    def normalize_name(self, player_name):
+        name = player_name.replace(".", "")
+        name = unidecode(name)
+        return name
 
     def buildPlayerIdStart(self, player_name):
         names = player_name.split(" ")
@@ -52,7 +58,7 @@ class grabPlayerData:
                 player_data_list = data.get('data', [])
                 if player_data_list:
                     player_data = player_data_list[0]  # Will get 2 responses for 1 player, first is regular season, second is playoffs
-                    if player_data['playerName'] == player_name:
+                    if self.normalize_name(player_data['playerName']) == self.normalize_name(player_name):
                         player_stats = player_data
                         playerId = id
                         looking_for_player = False

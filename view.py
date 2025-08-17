@@ -63,7 +63,7 @@ class FantasyView(QWidget):
         pf_input_layout.addWidget(self.pfinput)
         player_input_layout.addLayout(pf_input_layout)
 
-        # Make the point gaurd input + label
+        # Make the center input + label
         c_input_layout = QVBoxLayout()
         self.clabel = QLabel("C")
         self.clabel.setAlignment(Qt.AlignCenter)
@@ -71,6 +71,10 @@ class FantasyView(QWidget):
         c_input_layout.addWidget(self.clabel)
         c_input_layout.addWidget(self.cinput)
         player_input_layout.addLayout(c_input_layout)
+
+        # Allow for navigation w/ 'enter'
+        self.setup_input_navigation()
+
 
 
         # Make the submit and output area
@@ -115,3 +119,17 @@ class FantasyView(QWidget):
             }
             
         """)
+
+    def setup_input_navigation(self):
+        """Set up tab order and initial focus for input fields"""
+        # Create a list of input fields in order
+        self.input_fields = [
+            self.pginput,
+            self.sginput, 
+            self.sfinput,
+            self.pfinput,
+            self.cinput
+        ]
+        
+        # Set initial focus to first input
+        self.pginput.setFocus()

@@ -30,19 +30,20 @@ class FantasyController:
         self.loading_timer = QTimer()
         self.loading_timer.timeout.connect(self.update_loading_message)
         self.loading_messages = [
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">🏀 Grabbing player stats...</div>',
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">📊 Analyzing individual performances...</div>',
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">🧠 Evaluating team chemistry...</div>',
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">⚖️ Calculating synergies...</div>',
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">🔮 Predicting team success...</div>',
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">📈 Finishing up analysis...</div>',
-            '<div style="text-align: center; font-size: 24px; font-weight: bold;">⏳ Almost there...</div>'
+            '<div style="text-align: center; font-size: 24px; font-weight: bold;">Loading.</div>',
+            '<div style="text-align: center; font-size: 24px; font-weight: bold;">Loading..</div>',
+            '<div style="text-align: center; font-size: 24px; font-weight: bold;">Loading...</div>',
+            '<div style="text-align: center; font-size: 24px; font-weight: bold;">Loading....</div>'
         ]
         self.loading_message_index = 0
 
         # Connect signals to slots
         self.view.submit_btn.clicked.connect(self.on_submit)
         self.view.output_area.setHtml('<div style="text-align: center; font-size: 18px; font-weight: bold;">Welcome to the lineup analyzer. Put in a starting 5 and submit to get an evaluation of the team</div')
+
+        # Allow for 'enter' navigation
+        self.setup_enter_navigation()
+
 
 
     def update_loading_message(self):
@@ -57,7 +58,7 @@ class FantasyController:
         """Start the loading message animation"""
         self.loading_message_index = 0  
         self.update_loading_message() 
-        self.loading_timer.start(1600)  
+        self.loading_timer.start(500)  
 
     def stop_loading_animation(self):
         """Stop the loading message animation"""
@@ -109,3 +110,14 @@ class FantasyController:
     def cleanup(self):
         self.loading_timer.stop()
         self.executor.shutdown(wait=True)
+
+    def setup_enter_navigation(self):
+        """Set up Enter key to move between input fields"""
+        # Connect Enter key press to move to next field
+        self.view.pginput.returnPressed.connect(lambda: self.view.sginput.setFocus())
+        self.view.sginput.returnPressed.connect(lambda: self.view.sfinput.setFocus())
+        self.view.sfinput.returnPressed.connect(lambda: self.view.pfinput.setFocus())
+        self.view.pfinput.returnPressed.connect(lambda: self.view.cinput.setFocus())
+        
+        # Last field submits the form when Enter is pressed
+        self.view.cinput.returnPressed.connect(self.on_submit)
