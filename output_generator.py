@@ -273,5 +273,6 @@ class outputGenerator:
 
         # Get the predicted record statement
         predicted_record_statement = self.generate_record_statement(team_analysis['wins'], team_analysis['losses'])
+        final_output += predicted_record_statement
         
         return final_output
