@@ -332,12 +332,12 @@ class teamAnalyzer:
 
         gaps = []
 
-        # Set thresholds, out of 5 total possible
+        # Set thresholds, out of 5 total possible, using 24-25 OKC Thunder stats (Champions)
         thresholds = {
-            'scoring_ability': 2.8,     
+            'scoring_ability': 3.6,     
             'playmaking': 2.0,  
-            'defense': 2.5,     
-            'rebounding': 2.2   
+            'defense': 3.5,     
+            'rebounding': 3.7   
         }
 
         for skill, total in team_totals.items():

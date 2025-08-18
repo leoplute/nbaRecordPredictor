@@ -2,6 +2,7 @@ from grab_player_data import grabPlayerData
 from stats_calculator import statsCalculator
 from team_analyzer import teamAnalyzer
 from output_generator import outputGenerator
+import json
 
 class FantasyModel:
 

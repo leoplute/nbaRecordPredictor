@@ -1,8 +1,13 @@
 import requests
+from team_analyzer import teamAnalyzer
+from stats_calculator import statsCalculator
 
 BASE_URL = "https://api.server.nbaapi.com/api/playertotals"
 ADVANCED_URL = "https://api.server.nbaapi.com/api/playeradvancedstats"
 
+def __init__(self):
+    self.teamAnalyzer = teamAnalyzer()
+    self.statsCalculator = statsCalculator()
 
 def find_player_id(player_name, season=2025):
     """Find player ID by searching all players in the season"""
